@@ -1,8 +1,3 @@
-/**
- * Name: Nicole Madruga Puga Cardenal
- * NIU: 1689707
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "dfs.h"

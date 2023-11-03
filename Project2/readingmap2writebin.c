@@ -9,6 +9,12 @@
 #include <time.h>
 #include "node.h"
 
+// Function to write a single node to a binary file
+void write_node(node* n, FILE* file) {
+    fwrite(n, sizeof(node), 1, file);
+    fwrite(n->name, 1, n->name_len, file);
+}
+
 int main(int argc,char *argv[])
 {
     clock_t start_time;
@@ -65,7 +71,8 @@ int main(int argc,char *argv[])
             field = strsep(&tmpline, "|");
             nodes[index].id = strtoul(field, &ptr, 10);
             field = strsep(&tmpline, "|");
-            nodes[index].name = (char*) malloc(strlen(field)*sizeof(char));
+            nodes[index].name_len = strlen(field)+1;
+            nodes[index].name = (char*) malloc((nodes[index].name_len)*sizeof(char));
 
             for (int i = 0; i < 7; i++)
                 field = strsep(&tmpline, "|");
@@ -80,7 +87,7 @@ int main(int argc,char *argv[])
         }
     }
     printf("Assigned data to %ld nodes\n", index);
-    // printf("Elapsed time: %f seconds\n", (float)(clock() - start_time) / CLOCKS_PER_SEC);
+    printf("Elapsed time: %f seconds\n", (float)(clock() - start_time) / CLOCKS_PER_SEC);
     printf("Last node has:\n id=%lu\n GPS=(%lf,%lf)\n Name=%s\n",nodes[index-1].id, nodes[index-1].lat, nodes[index-1].lon, nodes[index-1].name);
     
     rewind(mapfile);
@@ -161,19 +168,6 @@ int main(int argc,char *argv[])
     fclose(mapfile);
     printf("Assigned %ld edges\n", nedges);
     printf("Elapsed time: %f seconds\n", (float)(clock() - start_time) / CLOCKS_PER_SEC);
-    // Look for a node with more than 4 successors
-    for(unsigned long i=0; i<nnodes; i++) // print nodes with more than 2 successors
-    {
-        if(nodes[i].nsucc>4){
-            index = i;
-            break;
-        }
-        /*{
-            printf("Node %lu has id=%lu and %u successors\n",i,nodes[i].id, nodes[i].nsucc);
-        }*/
-    }
-    printf("Node %lu has id=%lu and %u successors:\n",index,nodes[index].id, nodes[index].nsucc);
-    for(int i=0; i<nodes[index].nsucc; i++) printf("  Node %lu with id %lu.\n",nodes[index].successors[i], nodes[nodes[index].successors[i]].id);
 
     FILE *binmapfile;
     char binmapname[80];
@@ -182,7 +176,9 @@ int main(int argc,char *argv[])
 
     binmapfile = fopen(binmapname,"wb");
     fwrite(&nnodes,sizeof(unsigned long),1,binmapfile);
-    fwrite(nodes,sizeof(node),nnodes,binmapfile);
+    for (size_t i = 0; i < nnodes; i++)
+        write_node(&nodes[i],binmapfile);
+
     fclose(binmapfile);
 
     for (size_t i = 0; i < nnodes; i++)

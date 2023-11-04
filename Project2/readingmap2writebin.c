@@ -12,7 +12,7 @@
 // Function to write a single node to a binary file
 void write_node(node* n, FILE* file) {
     fwrite(n, sizeof(node), 1, file);
-    fwrite(n->name, 1, n->name_len, file);
+    fwrite(n->name, sizeof(char), n->name_len, file);
 }
 
 int main(int argc,char *argv[])
@@ -71,8 +71,9 @@ int main(int argc,char *argv[])
             field = strsep(&tmpline, "|");
             nodes[index].id = strtoul(field, &ptr, 10);
             field = strsep(&tmpline, "|");
-            nodes[index].name_len = strlen(field)+1;
-            nodes[index].name = (char*) malloc((nodes[index].name_len)*sizeof(char));
+            nodes[index].name_len = strlen(field);
+            if(field != "") nodes[index].name = (char*) malloc((nodes[index].name_len+1)*sizeof(char));
+            strcpy(nodes[index].name,field);
 
             for (int i = 0; i < 7; i++)
                 field = strsep(&tmpline, "|");
@@ -177,7 +178,10 @@ int main(int argc,char *argv[])
     binmapfile = fopen(binmapname,"wb");
     fwrite(&nnodes,sizeof(unsigned long),1,binmapfile);
     for (size_t i = 0; i < nnodes; i++)
+    {
         write_node(&nodes[i],binmapfile);
+        if(i == 0) printf("Name: %s (size:%lu)",nodes[i].name, nodes[i].name_len);
+    }
 
     fclose(binmapfile);
 

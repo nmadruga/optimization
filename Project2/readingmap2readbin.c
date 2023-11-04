@@ -1,13 +1,10 @@
-// readingmap2.c
-// - loads the information of nodes in a binary file and shows the information of a particular node.
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "node.h"
 
-int main(int argc,char *argv[])
-{
+int main(int argc,char *argv[]) {
     clock_t start_time;
     unsigned long nnodes;
 
@@ -22,34 +19,66 @@ int main(int argc,char *argv[])
     start_time = clock();
 
     binmapfile = fopen(binmapname,"rb");
-    fread(&nnodes,sizeof(unsigned long),1,binmapfile);
-
-    node * nodes;
-
-    nodes = (node*) malloc(nnodes*sizeof(node));
-    if(nodes==NULL){
-        printf("Error when allocating the memory for the nodes\n");
-        return 2;
+    if (binmapfile == NULL) {
+        perror("Error opening the binary binmapfile");
+        return 1;
     }
 
-    fread(nodes,sizeof(node),nnodes,binmapfile);
-    fclose(binmapfile);
+    unsigned long numNodes;
+    if (fread(&numNodes, sizeof(unsigned long), 1, binmapfile) != 1) {
+        perror("Error reading the number of nodes");
+        fclose(binmapfile);
+        return 1;
+    }
 
-    printf("Total number of nodes is %ld\n", nnodes);
-    printf("Elapsed time: %f seconds\n", (float)(clock() - start_time) / CLOCKS_PER_SEC);
+    printf("Num nodes: %lu\n",numNodes);
 
-    // Call the A Star 
+    node *nodes = (node *)malloc(numNodes * sizeof(node));
+    if (nodes == NULL) {
+        perror("Error allocating memory for nodes");
+        fclose(binmapfile);
+        return 1;
+    }
 
-    for (size_t i = 0; i < nnodes; i++)
-    {
-        if (nodes[i].name) {
-            free(nodes[i].name);
+    for (unsigned long i = 0; i < numNodes; i++) {
+        
+        // First read the node information
+        if (fread(&nodes[i], sizeof(node), 1, binmapfile) != 1) {
+             // When there is a problem - deallocate and exit
+            perror("Error reading the node");
+            free(nodes);
+            fclose(binmapfile);
+            return 1;
         }
-        if (nodes[i].successors) {
-            free(nodes[i].successors);
+
+        if(nodes[i].name_len > 0) {
+            size_t name_len = nodes[i].name_len;
+            // Allocate memory for the name and read it
+            nodes[i].name = (char *)malloc((name_len+1)*sizeof(char));
+            // When there is a problem - deallocate and exit
+            if (fread(nodes[i].name, sizeof(char), name_len, binmapfile) != name_len) {
+                perror("Error reading the name");
+                free(nodes[i].name);
+                free(nodes);
+                fclose(binmapfile);
+                return 1;
+            }
         }
+        else
+            nodes[i].name = NULL;
+            
+    }
+
+    // Properly allocate successor's pointers :)
+
+    // Now, you have the map with all nodes on the graph
+
+    // Don't forget to free the memory when you're done
+    for (unsigned long i = 0; i < numNodes; i++) {
+        free(nodes[i].name);
     }
     free(nodes);
 
+    fclose(binmapfile);
     return 0;
 }

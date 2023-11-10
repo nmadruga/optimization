@@ -1,5 +1,11 @@
 #define MAXSUCC 23  // in an optimal implementation it must be removed
 
+typedef struct
+{
+    unsigned vertexto;
+    float weight;
+} weighted_arrow;
+
 typedef struct {
     unsigned long id; // Node identification
     char* name; // in an optimal implementation it must change to a pointer
@@ -7,7 +13,9 @@ typedef struct {
     double lat, lon;  // Node position
     unsigned short nsucc;  // Number of node successors; i. e. length of successors
     unsigned long* successors; // in an optimal implementation it must change to a pointer
+    /** TODO: Change to use pointers*/
     unsigned long** succ_pointers;
+    weighted_arrow arrow[5];
 } node;
 
 /**

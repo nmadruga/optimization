@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "read_map_binary.h": "c",
+        "write_map_binary.h": "c"
+    }
+}

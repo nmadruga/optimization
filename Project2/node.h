@@ -12,10 +12,10 @@ typedef struct {
     unsigned long name_len;
     double lat, lon;  // Node position
     unsigned short nsucc;  // Number of node successors; i. e. length of successors
-    unsigned long* successors; // in an optimal implementation it must change to a pointer
+    // unsigned long* old_successors in an optimal implementation it must change to a pointer
     /** TODO: Change to use pointers*/
-    unsigned long** succ_pointers;
-    weighted_arrow arrow[5];
+    weighted_arrow* successors;
+    // weighted_arrow arrow[5];
 } node;
 
 /**

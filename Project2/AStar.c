@@ -22,12 +22,18 @@ enum
 //     float weight;
 // } weighted_arrow;
 
+// typedef struct
+// {
+//     char name;
+//     unsigned arrows_num; SAME AS NSUCC
+//     weighted_arrow arrow[5];
+// } graph_vertex;
+
 typedef struct
 {
-    char name;
-    unsigned arrows_num;
-    weighted_arrow arrow[5];
-} graph_vertex;
+    float f;
+    bool IsOpen;
+} AStarControlData;
 
 typedef struct
 {
@@ -47,22 +53,17 @@ typedef struct QueueElementstruct
     struct QueueElementstruct *seg;
 } QueueElement;
 typedef QueueElement *PriorityQueue;
-typedef struct
-{
-    float f;
-    bool IsOpen;
-} AStarControlData;
 
-float heuristic(graph_vertex *Graph, unsigned vertex, unsigned goal)
+float heuristic(node *Graph, unsigned vertex, unsigned goal)
 {
     register unsigned short i;
     if (vertex == goal)
         return 0.0;
-    float minw = Graph[vertex].arrow[0].weight;
-    for (i = 1; i < Graph[vertex].arrows_num; i++)
+    float minw = Graph[vertex].successors[0].weight;
+    for (i = 1; i < Graph[vertex].nsucc; i++)
     {
-        if (Graph[vertex].arrow[i].weight < minw)
-            minw = Graph[vertex].arrow[i].weight;
+        if (Graph[vertex].successors[i].weight < minw)
+            minw = Graph[vertex].successors[i].weight;
     }
     return minw;
 }
@@ -116,7 +117,7 @@ void requeue_with_priority(unsigned v, PriorityQueue *Pq, AStarControlData *Q)
     add_with_priority(v, Pq, Q);
 }
 
-bool AStar(graph_vertex *Graph, AStarPath *PathData, unsigned GrOrder,
+bool AStar(node* Graph, AStarPath *PathData,
            unsigned node_start, unsigned node_goal)
 {
     register unsigned i;
@@ -142,10 +143,10 @@ bool AStar(graph_vertex *Graph, AStarPath *PathData, unsigned GrOrder,
             free(Q);
             return true;
         }
-        for (i = 0; i < Graph[node_curr].arrows_num; i++)
+        for (i = 0; i < Graph[node_curr].nsucc; i++)
         {
-            unsigned node_succ = Graph[node_curr].arrow[i].vertexto;
-            float g_curr_node_succ = PathData[node_curr].g + Graph[node_curr].arrow[i].weight;
+            unsigned node_succ = Graph[node_curr].successors[i].vertexto;
+            float g_curr_node_succ = PathData[node_curr].g + Graph[node_curr].successors[i].weight;
             if (g_curr_node_succ < PathData[node_succ].g)
             {
                 PathData[node_succ].parent = node_curr;
@@ -165,33 +166,36 @@ bool AStar(graph_vertex *Graph, AStarPath *PathData, unsigned GrOrder,
     return false;
 }
 
-#define GraphOrder 21
 int main(int argc,char *argv[])
 {
     write_map_binary("data/andorra.csv");
-    node * graph = read_map_binary("data/andorra.csv.bin");
-    // graph_vertex Graph[GraphOrder] = 
-    // AStarPath PathData[GraphOrder];
-    // unsigned node_start = 0U, node_goal = 20U;
-    // bool r = AStar(Graph, PathData, GraphOrder, node_start, node_goal);
-    // if (r == -1)
-    //     ExitError("in allocating memory for the OPEN list in AStar", 21);
-    // else if (!r)
-    //     ExitError("no solution found in AStar", 7);
-    // register unsigned v = node_goal, pv = PathData[v].parent, ppv;
-    // PathData[node_goal].parent = UINT_MAX;
-    // while (v != node_start)
-    // {
-    //     ppv = PathData[pv].parent;
-    //     PathData[pv].parent = v;
-    //     v = pv;
-    //     pv = ppv;
-    // }
-    // printf("Optimal path found:\nNode name | Distance\n----------|---------\n");
-    // printf(" %c (%3.3u) | Source\n", Graph[node_start].name, node_start);
-    // for (v = PathData[node_start].parent; v != UINT_MAX; v = PathData[v].parent)
-    //     printf(" %c (%3.3u) | %7.3f\n", Graph[v].name, v, PathData[v].g);
-    // return 0;
+    node* graph = read_map_binary("data/andorra.csv.bin");
+    if (graph) {
+        // graph_vertex Graph[GraphOrder] = 
+        // AStarPath PathData[GraphOrder]; 
+        AStarPath* PathData;
+        unsigned node_start = 0U, node_goal = 20U;
+        // bool r = AStar(graph, PathData, GraphOrder, node_start, node_goal);
+        bool result = AStar(graph, PathData, node_start, node_goal);
+        if (result == -1)
+            ExitError("in allocating memory for the OPEN list in AStar", 21);
+        else if (!result)
+            ExitError("no solution found in AStar", 7);
+        register unsigned v = node_goal, pv = PathData[v].parent, ppv;
+        PathData[node_goal].parent = UINT_MAX;
+        while (v != node_start)
+        {
+            ppv = PathData[pv].parent;
+            PathData[pv].parent = v;
+            v = pv;
+            pv = ppv;
+        }
+        printf("Optimal path found:\nNode name | Distance\n----------|---------\n");
+        printf(" %s (%3.3u) | Source\n", graph[node_start].name, node_start);
+        for (v = PathData[node_start].parent; v != UINT_MAX; v = PathData[v].parent)
+            printf(" %s (%3.3u) | %7.3f\n", graph[v].name, v, PathData[v].g);
+        return 0;
+    }
 }
 
 #endif

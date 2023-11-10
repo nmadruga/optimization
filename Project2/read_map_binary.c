@@ -70,6 +70,22 @@ node* read_map_binary(char * file_name) {
         }
         else
             nodes[i].name = NULL;
+
+        if(nodes[i].nsucc > 0) {
+            size_t success_len = nodes[i].nsucc;
+            // Allocate memory for the list of successors nodes
+            nodes[i].successors = (weighted_arrow*)malloc(success_len*sizeof(weighted_arrow));
+            if (fread(nodes[i].successors, sizeof(weighted_arrow), success_len, binmapfile) != success_len) {
+                perror("Error reading the successors");
+                free(nodes[i].successors);
+                free(nodes);
+                fclose(binmapfile);
+                /** TODO: ALSO SHOULD DEALLOCATE */
+                return NULL;
+            }
+        }
+        else
+            nodes[i].successors = NULL;
             
     }
 

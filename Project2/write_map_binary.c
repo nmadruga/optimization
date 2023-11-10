@@ -17,6 +17,7 @@
 void write_node(node* n, FILE* file) {
     fwrite(n, sizeof(node), 1, file);
     fwrite(n->name, sizeof(char), n->name_len, file);
+    fwrite(n->successors, sizeof(weighted_arrow), n->nsucc, file);
 }
 
 int write_map_binary(char* file_name)
@@ -81,7 +82,9 @@ int write_map_binary(char* file_name)
             nodes[index].lon = atof(field);
 
             nodes[index].nsucc = 0; // start with 0 successors
-            nodes[index].successors = (unsigned long*) malloc(MAXSUCC*sizeof(unsigned long));
+
+            /** TODO: Use nodes[index].successors = realloc()*/
+            nodes[index].successors = (weighted_arrow*) malloc(MAXSUCC*sizeof(weighted_arrow));
 
             index++;
         }
@@ -127,16 +130,19 @@ int write_map_binary(char* file_name)
                 // Check if the edge did appear in a previous way
                 int newdest = 1;
                 for(int i=0;i<nodes[origin].nsucc;i++)
-                    if(nodes[origin].successors[i]==dest){
+                    if(nodes[origin].successors[i].vertexto==dest){
                         newdest = 0;
                         break;
                     }
                 if(newdest){
-                    if(nodes[origin].nsucc>=MAXSUCC){
-                        printf("Maximum number of successors (%d) reached in node %lu.\n",MAXSUCC,nodes[origin].id);
-                        return 5;
-                    }
-                    nodes[origin].successors[nodes[origin].nsucc]=dest;
+
+                    // if(nodes[origin].nsucc>=MAXSUCC){
+                    //     printf("Maximum number of successors (%d) reached in node %lu.\n",MAXSUCC,nodes[origin].id);
+                    //     return 5;
+                    // }
+                    nodes[origin].successors[nodes[origin].nsucc].vertexto=dest;
+                    /** TODO: Find the correct weight ? where is it? Distance? */
+                    nodes[origin].successors[nodes[origin].nsucc].weight = 1;
                     nodes[origin].nsucc++;
                     nedges++;
                 }
@@ -145,7 +151,7 @@ int write_map_binary(char* file_name)
                     // Check if the edge did appear in a previous way
                     int newor = 1;
                     for(int i=0;i<nodes[dest].nsucc;i++)
-                        if(nodes[dest].successors[i]==origin){
+                        if(nodes[dest].successors[i].vertexto==origin){
                             newor = 0;
                             break;
                         }
@@ -154,7 +160,7 @@ int write_map_binary(char* file_name)
                             printf("Maximum number of successors (%d) reached in node %lu.\n",MAXSUCC,nodes[dest].id);
                             return 5;
                         }
-                        nodes[dest].successors[nodes[dest].nsucc]=origin;
+                        nodes[dest].successors[nodes[dest].nsucc].vertexto=origin;
                         nodes[dest].nsucc++;
                         nedges++;
                     }

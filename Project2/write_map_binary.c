@@ -79,8 +79,8 @@ void add_to_successors(node* node, unsigned int vertexto, double weight)
 void write_node(node* graph_node, FILE* file)
 {
      fwrite(graph_node, sizeof(node), 1, file);
-     fwrite(graph_node->name, sizeof(char), graph_node->name_len, file);
-     fwrite(graph_node->successors, sizeof(weighted_arrow), graph_node->nsucc, file);
+     if(graph_node->name_len>0) fwrite(graph_node->name, sizeof(char), graph_node->name_len+1, file);
+     if(graph_node->nsucc>0) fwrite(graph_node->successors, sizeof(weighted_arrow), graph_node->nsucc, file);
 }
 
 /**
@@ -145,7 +145,7 @@ int write_map_binary(char* filename)
             if(strlen(field) > 0)
             {
                 nodes[index].name_len = strlen(field);
-                nodes[index].name = (char*) malloc((nodes[index].name_len+1)*sizeof(char));
+                nodes[index].name = malloc((nodes[index].name_len+1)*sizeof(char));
                 strcpy(nodes[index].name,field);
             }
 
@@ -156,7 +156,7 @@ int write_map_binary(char* filename)
             nodes[index].lon = atof(field);
 
             nodes[index].nsucc = 0; // start with 0 successors
-            nodes[index].successors = (weighted_arrow*) malloc(MAXSUCC*sizeof(weighted_arrow));
+            nodes[index].successors = NULL;
 
             index++;
         }

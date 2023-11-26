@@ -138,16 +138,13 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
     register unsigned i;
     PriorityQueue Open = NULL;
     AStarControlData *Q;
-    printf("Starting a-star...\n");
     if ((Q = (AStarControlData *)malloc(Graphsize * sizeof(AStarControlData))) == NULL)
         exit_error("when allocating memory for the AStar Control Data vector", 73);
-    printf("Allocating aux structures...\n");
     for (i = 0; i < Graphsize; i++)
     {
         PathData[i].sum_weights = MAXFLOAT;
         Q[i].IsOpen = false;
     }
-    printf("Finished initiallising A-Star...\n");
     PathData[node_start].sum_weights = 0.0;
     PathData[node_start].parent = ULONG_MAX;
     Q[node_start].cost = heuristic(Graph, node_start, node_goal);
@@ -162,7 +159,6 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
             free(Q);
             return true;
         }
-        printf("Checking node %d\n", node_curr);
         for (i = 0; i < Graph[node_curr].nsucc; i++)
         {
             unsigned node_succ = Graph[node_curr].successors[i].vertexto;
@@ -210,8 +206,8 @@ int main(int argc,char *argv[])
     }
 
     char* filename = argv[1];
-    printf("Start reading csv file\n");
-    write_map_binary(filename);
+    // printf("Start reading csv file\n");
+    // write_map_binary(filename);
     rename_extension(filename,".bin");
     unsigned long graph_size;
     node* graph = read_map_binary(filename, &graph_size);

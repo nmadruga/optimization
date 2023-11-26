@@ -26,45 +26,43 @@ void deallocate_and_close(node* graph, size_t nnodes, FILE* binmapfile)
     fclose(binmapfile);
 }
 
-int read_node(node* node, FILE* file)
+int read_node(node* graph_node, FILE* file)
 {
     // First read the node information
-    if (fread(node, sizeof(node), 1, file) != 1)
+    if (fread(graph_node, sizeof(node), 1, file) != 1)
     {
          // When there is a problem - deallocate and exit
         perror("Error reading the node\n");
         return 1;
     }
-    printf("Reading node: name_len: %d\n nsucc: %d\nlat: %f lon: %f\n",node->name_len,  node->nsucc, node->lat, node->lon);
 
-    if(node->name_len > 0)
+    if(graph_node->name_len > 0)
     {
-        size_t name_len = node->name_len;
         // Allocate memory for the name and read it
-        node->name = (char *)malloc((name_len+1)*sizeof(char));
+        graph_node->name = (char *)malloc((graph_node->name_len+1)*sizeof(char));
         // When there is a problem - deallocate and exit
-        if (fread(node->name, sizeof(char), name_len, file) != name_len)
+        if (fread(graph_node->name, sizeof(char), graph_node->name_len + 1, file) != graph_node->name_len + 1)
         {
             perror("Error reading the name\n");
             return 1;
         }
     }
     else
-        node->name = NULL;
+        graph_node->name = NULL;
 
-    if(node->nsucc > 0)
+    if(graph_node->nsucc > 0)
     {
-        size_t nsucc = node->nsucc;
+        size_t nsucc = graph_node->nsucc;
         // Allocate memory for the list of successors nodes
-        node->successors = (weighted_arrow*)malloc(nsucc*sizeof(weighted_arrow));
-        if (fread(node->successors, sizeof(weighted_arrow), nsucc, file) != nsucc)
+        graph_node->successors = (weighted_arrow*)malloc(nsucc*sizeof(weighted_arrow));
+        if (fread(graph_node->successors, sizeof(weighted_arrow), nsucc, file) != nsucc)
         {
             perror("Error reading sucessors\n");
             return 1;
         }
     }
     else
-        node->successors = NULL;
+        graph_node->successors = NULL;
 
     return 0;
 }

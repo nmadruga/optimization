@@ -1,3 +1,6 @@
 Project2/AStar
 
 optimization.code-workspace
+*/*.pro
+*/*.pro.user
+*/AStar

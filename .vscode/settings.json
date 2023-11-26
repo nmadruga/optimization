@@ -3,5 +3,6 @@
         "read_map_binary.h": "c",
         "write_map_binary.h": "c",
         "node.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "/home/nicole/UAB/optimization/.vscode"
 }

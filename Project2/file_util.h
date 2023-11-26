@@ -1,0 +1,1 @@
+void rename_extension(char* filename, char* extension);

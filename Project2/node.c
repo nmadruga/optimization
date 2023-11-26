@@ -1,6 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "node.h"
 
-unsigned long searchNode(unsigned long id, node *nodes, unsigned long nnodes)
+unsigned long search_node(unsigned long id, node *nodes, unsigned long nnodes)
 {
     // we know that the nodes where numrically ordered by id, so we can do a binary search.
     unsigned long l = 0, r = nnodes - 1, m;

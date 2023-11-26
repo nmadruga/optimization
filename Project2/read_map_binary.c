@@ -8,49 +8,81 @@
 #include "node.h"
 #include "read_map_binary.h"
 
-node* read_map_binary(char * file_name) {
-    clock_t start_time;
-    unsigned long nnodes;
+// void update_parent_nodes(node* graph, size_t GraphOrder)
+// {
+//     for(size_t i = 0; i < GraphOrder; i++)
+//     {
+//         if (graph[i].nsucc > 0)
+//         {
+//             for(int j = 0; j < graph[i].nsucc; j++)
+//             {
+//                 unsigned int successor_index = graph[i].successors[j].vertexto;
+//                 graph[i].successors[j].node_succ = &graph[successor_index];
+//             }
+//         }
+//     }
+// }
 
-    start_time = clock();
+/**
+ * @private deallocate_and_close
+ * Free all allocated memory and close the file
+ * @param graph Pointer to vector with all nodes
+ * @param nnodes        Number of nodes in graph
+ * @param binmapfile    Binaryfile to be closed
+*/
+void deallocate_and_close(node* graph, size_t nnodes, FILE* binmapfile)
+{
+     for (unsigned long i = 0; i < nnodes; i++) {
+         free(graph[i].name);
+         free(graph[i].successors);
+     }
+     free(graph);
 
+    fclose(binmapfile);
+}
+
+/**
+ * @public read_map_binary
+ * Read from csv file that stores nodes and edges
+ * create a graph structure and save to binary file 
+*/
+node* read_map_binary(char * filename, size_t* size) {
+    clock_t start_time, end_time;
+    double cpu_time_used;
+    unsigned long nnodes = (*size);
     FILE *binmapfile;
+
     start_time = clock();
 
-    binmapfile = fopen(file_name,"rb");
+    printf("Reading binary file: %s\n", filename);
+    binmapfile = fopen(filename,"rb");
     if (binmapfile == NULL) {
         perror("Error opening the binary binmapfile");
-        /** TODO: ALSO SHOULD DEALLOCATE */
         return NULL;
     }
 
-    unsigned long numNodes;
-    if (fread(&numNodes, sizeof(unsigned long), 1, binmapfile) != 1) {
+    if (fread(size, sizeof(size_t), 1, binmapfile) != 1) {
         perror("Error reading the number of nodes");
         fclose(binmapfile);
-        /** TODO: ALSO SHOULD DEALLOCATE */
         return NULL;
     }
 
-    printf("Num nodes: %lu\n",numNodes);
-
-    node *nodes = (node *)malloc(numNodes * sizeof(node));
+    printf("Num nodes: %lu\n",*size);
+    node *nodes = (node *)malloc(nnodes * sizeof(node));
     if (nodes == NULL) {
         perror("Error allocating memory for nodes");
-        fclose(binmapfile);
-        /** TODO: ALSO SHOULD DEALLOCATE */
+        deallocate_and_close(nodes, nnodes, binmapfile);
         return NULL;
     }
 
-    for (unsigned long i = 0; i < numNodes; i++) {
+    // Start reading each node
+    for (unsigned long i = 0; i < nnodes; i++) {
         
         // First read the node information
         if (fread(&nodes[i], sizeof(node), 1, binmapfile) != 1) {
              // When there is a problem - deallocate and exit
             perror("Error reading the node");
-            free(nodes);
-            fclose(binmapfile);
-            /** TODO: ALSO SHOULD DEALLOCATE */
+            deallocate_and_close(nodes, nnodes, binmapfile);
             return NULL;
         }
 
@@ -61,10 +93,7 @@ node* read_map_binary(char * file_name) {
             // When there is a problem - deallocate and exit
             if (fread(nodes[i].name, sizeof(char), name_len, binmapfile) != name_len) {
                 perror("Error reading the name");
-                free(nodes[i].name);
-                free(nodes);
-                fclose(binmapfile);
-                /** TODO: ALSO SHOULD DEALLOCATE */
+                deallocate_and_close(nodes, nnodes, binmapfile);
                 return NULL;
             }
         }
@@ -76,31 +105,29 @@ node* read_map_binary(char * file_name) {
             // Allocate memory for the list of successors nodes
             nodes[i].successors = (weighted_arrow*)malloc(success_len*sizeof(weighted_arrow));
             if (fread(nodes[i].successors, sizeof(weighted_arrow), success_len, binmapfile) != success_len) {
-                perror("Error reading the successors");
-                free(nodes[i].successors);
-                free(nodes);
-                fclose(binmapfile);
-                /** TODO: ALSO SHOULD DEALLOCATE */
+                perror("Error reading the successors");        
+                deallocate_and_close(nodes, nnodes, binmapfile);
                 return NULL;
             }
         }
         else
             nodes[i].successors = NULL;
-            
     }
 
-    // Properly allocate successor's pointers :)
+    // update_parent_nodes(nodes, nnodes);
 
-    // Now, you have the map with all nodes on the graph
-
-    /** TODO: DEALLOCATION FUNCTION */
-    // // Don't forget to free the memory when you're done
-    // for (unsigned long i = 0; i < numNodes; i++) {
-    //     free(nodes[i].name);
-    // }
-    // free(nodes);
-
+    // Call close file in the end
     fclose(binmapfile);
+
+    // Record the end time
+    end_time = clock();
+
+    // Calculate the CPU time used
+    cpu_time_used = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
+
+    // Display the result
+    printf("Read_map_binary - CPU Time Used: %f seconds\n", cpu_time_used);
+
     return nodes;
 }
 

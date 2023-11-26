@@ -3,4 +3,9 @@ Project2/AStar
 optimization.code-workspace
 */*.pro
 */*.pro.user
+**/build-project2-Desktop-Debug
+
+# Remove any executable or data
+data/*.csv
+data/*.bin
 */AStar

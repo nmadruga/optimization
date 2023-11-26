@@ -138,13 +138,16 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
     register unsigned i;
     PriorityQueue Open = NULL;
     AStarControlData *Q;
+    printf("Starting a-star...\n");
     if ((Q = (AStarControlData *)malloc(Graphsize * sizeof(AStarControlData))) == NULL)
         exit_error("when allocating memory for the AStar Control Data vector", 73);
+    printf("Allocating aux structures...\n");
     for (i = 0; i < Graphsize; i++)
     {
         PathData[i].sum_weights = MAXFLOAT;
         Q[i].IsOpen = false;
     }
+    printf("Finished initiallising A-Star...\n");
     PathData[node_start].sum_weights = 0.0;
     PathData[node_start].parent = ULONG_MAX;
     Q[node_start].cost = heuristic(Graph, node_start, node_goal);
@@ -155,9 +158,11 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
         unsigned node_curr;
         if ((node_curr = extract_min(&Open)) == node_goal)
         {
+            printf("Found goal node: %d\n", node_curr);
             free(Q);
             return true;
         }
+        printf("Checking node %d\n", node_curr);
         for (i = 0; i < Graph[node_curr].nsucc; i++)
         {
             unsigned node_succ = Graph[node_curr].successors[i].vertexto;
@@ -186,13 +191,20 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
 */
 int main(int argc,char *argv[])
 {
-        // Check if the second and third arguments are integers
+    if (argc != 4)
+    {
+        exit_error("Error: Invalid number of arguments.\n",1);
+        return 1; // Return an error code
+    }
+
+    // Check if the second and third arguments are integers
     char *endptr1, *endptr2;
     long int1 = strtol(argv[2], &endptr1, 10);
     long int2 = strtol(argv[3], &endptr2, 10);
 
     // Check for conversion errors
-    if (*endptr1 != '\0' || *endptr2 != '\0') {
+    if (*endptr1 != '\0' || *endptr2 != '\0')
+    {
         exit_error("Error: Invalid integer argument(s).\n", 1);
         return 1; // Return an error code
     }
@@ -205,7 +217,14 @@ int main(int argc,char *argv[])
     node* graph = read_map_binary(filename, &graph_size);
     if (graph && graph_size) {
         AStarPath* PathData = malloc(graph_size*sizeof(AStarPath));
+        if (PathData == NULL)
+        {
+            exit_error("in allocating memory for the PATH_DATA structure", 21);
+        }
+        printf("Search node start: %ld\n", int1);
         unsigned long node_start_index = search_node(int1, graph, graph_size);
+        
+        printf("Search node goal: %ld\n", int2);
         unsigned long node_goal_index = search_node(int2, graph, graph_size);
         printf("Start node: %ld\nEnd node: %ld\n",node_start_index, node_goal_index);
 

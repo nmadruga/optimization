@@ -6,7 +6,6 @@ typedef struct node node;
 */
 typedef struct {
     unsigned vertexto;
-    node* node_succ;
     float weight;
 } weighted_arrow;
 
@@ -15,10 +14,10 @@ typedef struct {
 */
 struct node {
     unsigned long id; // Node identification
-    char* name; // in an optimal implementation it must change to a pointer
-    unsigned long name_len;
     double lat, lon;  // Node position
-    unsigned short nsucc;  // Number of node successors; i. e. length of successors
+    int name_len;
+    char* name; // Name of node
+    int nsucc;  // Number of node successors; i. e. length of successors
     weighted_arrow* successors;
 };
 

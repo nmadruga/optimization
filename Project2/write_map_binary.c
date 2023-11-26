@@ -46,15 +46,41 @@ double calculate_weight(node* source, node* destine)
 }
 
 /**
+ * @private add_to_successors
+ * Add a new successor to the vector reallocating the structure
+ * @param node  Current node in graph to add new successor
+ * @param vertexto  Vertex index of the sucessor 
+ * @param weight    The weight pre calculated between node and successor
+*/
+void add_to_successors(node* node, unsigned int vertexto, double weight)
+{
+    unsigned long nsucc = node->nsucc;
+    weighted_arrow* aux = node->successors;
+    node->successors = (weighted_arrow*) malloc((nsucc+1)*sizeof(weighted_arrow));
+
+    // Copy previous elements from old vector
+    for (size_t i = 0; i < nsucc; i++)
+        node->successors[i] = aux[i];
+
+    // Deallocate previous vector
+    free(aux);
+    
+    node->successors[nsucc].vertexto=vertexto;
+    node->successors[nsucc].weight=weight;
+    node->nsucc++;
+}
+
+/**
  * @private function write_node 
  * Write one node to file
- * @param node Pointer with values to be written
- * @param file The file where to write
+ * @param graph_node    Pointer with values to be written
+ * @param file          The file where to write
 */
-void write_node(node* node, FILE* file) {
-    fwrite(node, sizeof(node), 1, file);
-    fwrite(node->name, sizeof(char), node->name_len, file);
-    fwrite(node->successors, sizeof(weighted_arrow), node->nsucc, file);
+void write_node(node* graph_node, FILE* file)
+{
+     fwrite(graph_node, sizeof(node), 1, file);
+     fwrite(graph_node->name, sizeof(char), graph_node->name_len, file);
+     fwrite(graph_node->successors, sizeof(weighted_arrow), graph_node->nsucc, file);
 }
 
 /**
@@ -115,9 +141,13 @@ int write_map_binary(char* filename)
             field = strsep(&tmpline, "|");
             nodes[index].id = strtoul(field, &ptr, 10);
             field = strsep(&tmpline, "|");
-            nodes[index].name_len = strlen(field);
-            if(field != "") nodes[index].name = (char*) malloc((nodes[index].name_len+1)*sizeof(char));
-            strcpy(nodes[index].name,field);
+            nodes[index].name_len = 0;
+            if(strlen(field) > 0)
+            {
+                nodes[index].name_len = strlen(field);
+                nodes[index].name = (char*) malloc((nodes[index].name_len+1)*sizeof(char));
+                strcpy(nodes[index].name,field);
+            }
 
             for (int i = 0; i < 7; i++)
                 field = strsep(&tmpline, "|");
@@ -175,13 +205,8 @@ int write_map_binary(char* filename)
                         break;
                     }
                 if(newdest){
-                    nodes[origin].successors[nodes[origin].nsucc].vertexto=dest;
-                    // Find the correct weight of distance between source and sucessor
-                    nodes[origin].successors[nodes[origin].nsucc].weight = calculate_weight(&nodes[origin],&nodes[dest]);
-                    // The node_succ pointer can only be set after readin from binary
-                    nodes[origin].successors[nodes[origin].nsucc].node_succ = NULL;
-
-                    nodes[origin].nsucc++;
+                    double weight = calculate_weight(&nodes[origin],&nodes[dest]);
+                    add_to_successors(&nodes[origin], dest, weight);
                     nedges++;
                 }
                 if(!oneway)
@@ -193,13 +218,10 @@ int write_map_binary(char* filename)
                             newor = 0;
                             break;
                         }
-                    if(newor){
-                        if(nodes[dest].nsucc>=MAXSUCC){
-                            printf("Maximum number of successors (%d) reached in node %lu.\n",MAXSUCC,nodes[dest].id);
-                            return 5;
-                        }
-                        nodes[dest].successors[nodes[dest].nsucc].vertexto=origin;
-                        nodes[dest].nsucc++;
+                    if(newor)
+                    {
+                        double weight = calculate_weight(&nodes[dest],&nodes[origin]);
+                        add_to_successors(&nodes[dest], origin, weight);
                         nedges++;
                     }
                 }
@@ -225,6 +247,8 @@ int write_map_binary(char* filename)
     for (size_t i = 0; i < nnodes; i++)
     {
         write_node(&nodes[i],binmapfile);
+        if (i < 15)
+            printf("Writing node: %ld\nName: %s name_len: %d\n nsucc: %d\nlat: %f lon: %f\n",i,nodes[i].name, nodes[i].name_len,  nodes[i].nsucc, nodes[i].lat, nodes[i].lon);
     }
 
     fclose(binmapfile);

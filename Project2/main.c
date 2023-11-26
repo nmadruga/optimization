@@ -35,6 +35,8 @@ float heuristic(node *Graph, unsigned vertex, unsigned goal)
     register unsigned short i;
     if (vertex == goal)
         return 0.0;
+    if(Graph[vertex].nsucc == 0)
+        return 0.0;
     float minw = Graph[vertex].successors[0].weight;
     for (i = 1; i < Graph[vertex].nsucc; i++)
     {

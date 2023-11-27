@@ -2,6 +2,15 @@
 #include <stdlib.h>
 #include "node.h"
 
+/**
+ * @public search_node
+ * Receives the node id and look for its index
+ * in the graph to be returned
+ * @param id    Id for the node searched
+ * @param nodes Graph with all the nodes
+ * @param nnodes    Size od the graph
+ * @return index of the node searched
+*/
 unsigned long search_node(unsigned long id, node *nodes, unsigned long nnodes)
 {
     // we know that the nodes where numrically ordered by id, so we can do a binary search.

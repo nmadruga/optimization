@@ -12,12 +12,12 @@
  * @private deallocate_and_close
  * Free all allocated memory and close the file
  * @param graph Pointer to vector with all nodes
- * @param nnodes        Number of nodes in graph
+ * @param graph_size        Number of nodes in graph
  * @param binmapfile    Binaryfile to be closed
 */
-void deallocate_and_close(node* graph, size_t nnodes, FILE* binmapfile)
+void deallocate_and_close(node* graph, size_t graph_size, FILE* binmapfile)
 {
-     for (unsigned long i = 0; i < nnodes; i++) {
+     for (unsigned long i = 0; i < graph_size; i++) {
          free(graph[i].name);
          free(graph[i].successors);
      }
@@ -72,7 +72,7 @@ int read_node(node* graph_node, FILE* file)
  * Read from csv file that stores nodes and edges
  * create a graph structure and save to binary file 
 */
-node* read_map_binary(char * filename, size_t* nnodes) {
+node* read_map_binary(char * filename, size_t* graph_size) {
     clock_t start_time, end_time;
     double cpu_time_used;
     FILE *binmapfile;
@@ -86,31 +86,31 @@ node* read_map_binary(char * filename, size_t* nnodes) {
         return NULL;
     }
 
-    if (fread(nnodes, sizeof(unsigned long), 1, binmapfile) != 1) {
+    if (fread(graph_size, sizeof(unsigned long), 1, binmapfile) != 1) {
         perror("Error reading the number of nodes");
         fclose(binmapfile);
         return NULL;
     }
 
-    printf("Num nodes: %lu\n",*nnodes);
-    node *nodes = (node *)malloc((*nnodes) * sizeof(node));
+    printf("Num nodes: %lu\n",*graph_size);
+
+    // Allocate the structure for the graph
+    node *nodes = (node *)malloc((*graph_size) * sizeof(node));
     if (nodes == NULL) {
         perror("Error allocating memory for nodes");
-        deallocate_and_close(nodes, *nnodes, binmapfile);
+        deallocate_and_close(nodes, *graph_size, binmapfile);
         return NULL;
     }
 
     // Start reading each node
-    for (unsigned long i = 0; i < *nnodes; i++)
+    for (unsigned long i = 0; i < *graph_size; i++)
     {
         if(read_node(&nodes[i], binmapfile) == 1)
         {
-            deallocate_and_close(nodes, *nnodes, binmapfile);
+            deallocate_and_close(nodes, *graph_size, binmapfile);
             return NULL;
         }
     }
-
-    // update_parent_nodes(nodes, nnodes);
 
     // Call close file in the end
     fclose(binmapfile);
@@ -123,6 +123,8 @@ node* read_map_binary(char * filename, size_t* nnodes) {
 
     // Display the result
     printf("Read_map_binary - CPU Time Used: %f seconds\n", cpu_time_used);
+
+    // Does not deallocate because we are returning the structure of graph
     return nodes;
 }
 

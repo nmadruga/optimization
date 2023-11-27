@@ -16,7 +16,7 @@
  * @private function to_radians
  * Convert distance from degrees to radians
  * @param degree distance between 2 points in degrees
- * @return value in meters corresponding to degrees
+ * @return value in radians corresponding to degrees
 */
 double to_radians(double degree) {
     return degree * M_PI / 180.0;
@@ -24,12 +24,12 @@ double to_radians(double degree) {
 
 /**
  * @private function calculate_weight
- * Calculate distance between 2 vertex in 
+ * Calculate distance between 2 vertexes in 
  * the graph (that represents a map). Uses 
- * latitute and longitude to calculate value.
+ * latitute and longitude to calculate the weigth.
  * @param source    Node with starting point
  * @param destine   Node with ending point
- * @return  vaue of distance in meters
+ * @return  value of the distance in meters
 */
 double calculate_weight(node* source, node* destine)
 {
@@ -86,7 +86,7 @@ void write_node(node* graph_node, FILE* file)
 /**
  * @public function write_map_binary
  * Function to read csv with nodes and edges
- * construct a graph and save to binary file
+ * and construct a graph, saving it to binary file
 */
 int write_map_binary(char* filename)
 {
@@ -118,8 +118,6 @@ int write_map_binary(char* filename)
     printf("Total number of nodes is %ld\n", nnodes);
 
     rewind(mapfile);
-    
-    start_time = clock();
 
     node *nodes;
     char *tmpline , *field , *ptr;
@@ -131,6 +129,7 @@ int write_map_binary(char* filename)
         return 2;
     }
 
+    // Reading each node and storing to graph structure
     while (getline(&line, &len, mapfile) != -1)
     {
         if (strncmp(line, "#", 1) == 0) continue;
@@ -141,6 +140,8 @@ int write_map_binary(char* filename)
             field = strsep(&tmpline, "|");
             nodes[index].id = strtoul(field, &ptr, 10);
             field = strsep(&tmpline, "|");
+
+            // Stores the length and name in a pointer
             nodes[index].name_len = 0;
             if(strlen(field) > 0)
             {
@@ -151,11 +152,15 @@ int write_map_binary(char* filename)
 
             for (int i = 0; i < 7; i++)
                 field = strsep(&tmpline, "|");
+
+            // Stores other fields that are part of the node
             nodes[index].lat = atof(field);
             field = strsep(&tmpline, "|");
             nodes[index].lon = atof(field);
 
-            nodes[index].nsucc = 0; // start with 0 successors
+            // Starts with 0 successors - each successor is
+            // added on the next loop (reading edges)
+            nodes[index].nsucc = 0;
             nodes[index].successors = NULL;
 
             index++;
@@ -168,6 +173,8 @@ int write_map_binary(char* filename)
     
     int oneway;
     unsigned long nedges = 0, origin, dest, originId, destId;
+
+    // Reading each edge connecting nodes
     while (getline(&line, &len, mapfile) != -1)
     {
         if (strncmp(line, "#", 1) == 0) continue;
@@ -197,14 +204,15 @@ int write_map_binary(char* filename)
                     continue;
                 }
                 if(origin==dest) continue;
+
                 // Check if the edge did appear in a previous way
-                int newdest = 1;
+                int new_dest = 1;
                 for(int i=0;i<nodes[origin].nsucc;i++)
                     if(nodes[origin].successors[i].vertexto==dest){
-                        newdest = 0;
+                        new_dest = 0;
                         break;
                     }
-                if(newdest){
+                if(new_dest){
                     double weight = calculate_weight(&nodes[origin],&nodes[dest]);
                     add_to_successors(&nodes[origin], dest, weight);
                     nedges++;
@@ -212,13 +220,13 @@ int write_map_binary(char* filename)
                 if(!oneway)
                 {   
                     // Check if the edge did appear in a previous way
-                    int newor = 1;
+                    int new_origin = 1;
                     for(int i=0;i<nodes[dest].nsucc;i++)
                         if(nodes[dest].successors[i].vertexto==origin){
-                            newor = 0;
+                            new_origin = 0;
                             break;
                         }
-                    if(newor)
+                    if(new_origin)
                     {
                         double weight = calculate_weight(&nodes[dest],&nodes[origin]);
                         add_to_successors(&nodes[dest], origin, weight);
@@ -238,6 +246,7 @@ int write_map_binary(char* filename)
     FILE *binmapfile;
     char binmapname[80];
 
+    // Saves graph structure to a binary file
     strcpy(binmapname,filename);
     rename_extension(binmapname,".bin");
 
@@ -245,14 +254,11 @@ int write_map_binary(char* filename)
     binmapfile = fopen(binmapname,"wb");
     fwrite(&nnodes,sizeof(unsigned long),1,binmapfile);
     for (size_t i = 0; i < nnodes; i++)
-    {
         write_node(&nodes[i],binmapfile);
-        if (i < 15)
-            printf("Writing node: %ld\nName: %s name_len: %d\n nsucc: %d\nlat: %f lon: %f\n",i,nodes[i].name, nodes[i].name_len,  nodes[i].nsucc, nodes[i].lat, nodes[i].lon);
-    }
 
     fclose(binmapfile);
 
+    // Deallocate graph structure after saving
     for (size_t i = 0; i < nnodes; i++)
     {
         if (nodes[i].name) {

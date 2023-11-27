@@ -5,7 +5,6 @@ optimization.code-workspace
 */*.pro.user
 **/build-project2-Desktop-Debug
 
-# Remove any executable or data
-data/*.csv
-data/*.bin
+# Remove result and binary
+*/data/*.bin
 */AStar

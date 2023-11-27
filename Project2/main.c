@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <values.h> // For MAXFLOAT = \infty and UINT_MAX = \infty
+#include <time.h>
 #include "node.h"
 #include "main.h"
 #include "file_util.h"
@@ -137,9 +138,14 @@ void requeue_with_priority(unsigned vertex, PriorityQueue *Pq, AStarControlData 
 bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData, 
            unsigned node_start, unsigned node_goal)
 {
+    clock_t start_time, end_time;
+    double cpu_time_used;
     register unsigned i;
     PriorityQueue Open = NULL;
     AStarControlData *Q;
+
+    start_time = clock();
+
     if ((Q = (AStarControlData *)malloc(Graphsize * sizeof(AStarControlData))) == NULL)
         exit_error("when allocating memory for the AStar Control Data vector", 73);
     for (i = 0; i < Graphsize; i++)
@@ -159,6 +165,16 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
         {
             printf("Found goal node: %d\n", node_curr);
             free(Q);
+
+            // Record the end time
+            end_time = clock();
+
+            // Calculate the CPU time used
+            cpu_time_used = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
+
+            // Display the result
+            printf("AStar - CPU Time Used: %f seconds\n", cpu_time_used);
+
             return true;
         }
         for (i = 0; i < Graph[node_curr].nsucc; i++)
@@ -181,6 +197,7 @@ bool AStar(node* Graph, unsigned long Graphsize, AStarPath *PathData,
         }
         Q[node_curr].IsOpen = false;
     } /* Main loop while */
+
     return false;
 }
 
@@ -219,31 +236,50 @@ int main(int argc,char *argv[])
         {
             exit_error("in allocating memory for the PATH_DATA structure", 21);
         }
-        printf("Search node start: %ld\n", int1);
         unsigned long node_start_index = search_node(int1, graph, graph_size);
-        
-        printf("Search node goal: %ld\n", int2);
         unsigned long node_goal_index = search_node(int2, graph, graph_size);
         printf("Start node: %ld\nEnd node: %ld\n",node_start_index, node_goal_index);
+
 
         bool result = AStar(graph, graph_size, PathData, node_start_index, node_goal_index);
         if (result == -1)
             exit_error("in allocating memory for the OPEN list in AStar", 21);
         else if (!result)
             exit_error("no solution found in AStar", 7);
+        
         register unsigned v = node_goal_index, pv = PathData[v].parent, ppv;
         PathData[node_goal_index].parent = UINT_MAX;
+        unsigned long count = 0;
         while (v != node_start_index)
         {
             ppv = PathData[pv].parent;
             PathData[pv].parent = v;
             v = pv;
             pv = ppv;
+            count++;
         }
-        printf("Optimal path found:\nNode name | Distance\n----------|---------\n");
-        printf(" %s (%3.3lu) | Source\n", graph[node_start_index].name, node_start_index);
-        for (v = PathData[node_start_index].parent; v != UINT_MAX; v = PathData[v].parent)
-            printf(" %s (%3.3u) | %7.3f\n", graph[v].name, v, PathData[v].sum_weights);
+        printf("Optimal path found with %ld nodes\n",count);
+        rename_extension(filename,"_result.csv");
+            // Open the CSV file for writing
+        FILE *csvFile = fopen(filename, "w");
+
+        // Check if the file was opened successfully
+        if (csvFile == NULL) {
+            perror("Error opening the file");
+            return 1;
+        }
+
+        // Write header to the CSV file
+        fprintf(csvFile, "Latitude,Longitude\n");
+
+        // Write data to the CSV file
+        for (v = PathData[node_start_index].parent; v != UINT_MAX; v = PathData[v].parent) 
+            fprintf(csvFile, "%f,%f\n", graph[v].lat, graph[v].lon);
+
+        // Close the CSV file
+        fclose(csvFile);
+
+        printf("Data has been written to output.csv\n");
         return 0;
     }
 }
